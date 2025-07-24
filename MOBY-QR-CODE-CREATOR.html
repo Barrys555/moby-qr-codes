@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MOBY QR Code Generator with Form Inputs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      max-width: 900px;
+    }
+    label {
+      margin-right: 10px;
+    }
+    input {
+      margin-right: 20px;
+      padding: 5px;
+    }
+    button {
+      margin: 10px 5px 20px 0;
+      padding: 8px 15px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .form-row {
+      margin-bottom: 10px;
+    }
+    .link-block {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+    canvas {
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>MOBY QR Code Generator</h2>
+
+  <div id="form-container">
+    <!-- Form rows will be added here -->
+  </div>
+  <button onclick="addRow()">Add Row</button>
+  <button onclick="generate()">Generate QR Codes</button>
+
+  <div id="output"></div>
+
+  <!-- QR code library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script>
+    let rowIndex = 0;
+
+    function addRow() {
+      const container = document.getElementById('form-container');
+      const row = document.createElement('div');
+      row.className = 'form-row';
+      row.innerHTML = `
+        <label>Vehicle ID: <input type="text" name="vehicleId${rowIndex}" /></label>
+        <label>Bike Number (bn): <input type="text" name="bikeNumber${rowIndex}" /></label>
+      `;
+      container.appendChild(row);
+      rowIndex++;
+    }
+
+    function generate() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+      const rows = document.querySelectorAll('.form-row');
+
+      const baseURL = 'https://mobymove.page.link/scan';
+
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const vehicleId = inputs[0].value.trim();
+        const bn = inputs[1].value.trim();
+
+        if (!vehicleId || !bn) return;
+
+        const url = `${baseURL}?bn=${bn}&vehicleId=${vehicleId}&source=ridemovi.com`;
+
+        const block = document.createElement('div');
+        block.className = 'link-block';
+
+        const linkElem = document.createElement('p');
+        linkElem.textContent = url;
+        block.appendChild(linkElem);
+
+        // Generate QR code
+        const qr = new QRious({
+          value: url,
+          size: 150
+        });
+
+        // Final canvas (QR + label)
+        const qrSize = 150;
+        const canvasHeight = qrSize + 30;
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = qrSize;
+        finalCanvas.height = canvasHeight;
+
+        const ctx = finalCanvas.getContext('2d');
+        ctx.drawImage(qr.canvas, 0, 0);
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000';
+        ctx.fillText(`Vehicle ID: ${vehicleId}`, qrSize / 2, qrSize + 20);
+
+        block.appendChild(finalCanvas);
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download PNG';
+        downloadBtn.onclick = () => {
+          const a = document.createElement('a');
+          a.href = finalCanvas.toDataURL('image/png');
+          a.download = `${vehicleId}.png`;
+          a.click();
+        };
+        block.appendChild(downloadBtn);
+
+        output.appendChild(block);
+      });
+    }
+
+    // Add first row by default
+    window.onload = addRow;
+  </script>
+</body>
+</html>
